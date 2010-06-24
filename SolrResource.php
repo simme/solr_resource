@@ -80,6 +80,9 @@ class SolrResource {
             case 'tid':
               self::getTermInfo($res['facets'][$facet_field]);
               break;
+            case 'im_simple_geo_area':
+              self::getAreaInfo($res['facets'][$facet_field]);
+              break;
             // TODO: Maybe the facet describing process should be extensible?
           }
         }
@@ -95,6 +98,14 @@ class SolrResource {
     return $res;
   }
 
+  /**
+   * Get tag info from a group of TID's
+   *
+   * @static
+   * @access    private
+   * @param     array         &$facets
+   * @return    void
+   */
   private static function getTermInfo(&$facets) {
     $tids = array_keys($facets);
     if (!empty($tids)) {
@@ -102,6 +113,25 @@ class SolrResource {
       $res = db_query("SELECT tid, vid, name FROM {term_data} WHERE tid IN({$placeholders})", $tids);
       while($t = db_fetch_object($res)) {
         $facets[$t->tid] = array('name' => $t->name, 'vid' => $t->vid, 'count' => $facets[$t->tid]);
+      }
+    }
+  }
+
+  /**
+   * Get area info from a group of NID's
+   *
+   * @static
+   * @access    private
+   * @param     array         &$facets
+   * @return    void
+   */
+  private static function getAreaInfo(&$facets) {
+    $area_ids = array_keys($facets);
+    if (!empty($area_ids)) {
+      $placeholders = join(array_fill(0, count($area_ids), '%d'), ', ');
+      $res = db_query("SELECT nid, title FROM {node} WHERE nid IN({$placeholders})", $area_ids);
+      while($a = db_fetch_object($res)) {
+        $facets[$a->nid] = $a->title;
       }
     }
   }
